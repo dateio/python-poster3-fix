@@ -4,8 +4,9 @@ from http.client import NotConnected
 __all__ = ['StreamingHTTPConnection', 'StreamingHTTPRedirectHandler',
         'StreamingHTTPHandler', 'register_openers']
 
-if hasattr(http.client, 'HTTPS'):
-    __all__.extend(['StreamingHTTPSHandler', 'StreamingHTTPSConnection'])
+# gargii: The HTTPS attribute is always false :-/
+#if hasattr(http.client, 'HTTPS'):
+__all__.extend(['StreamingHTTPSHandler', 'StreamingHTTPSConnection'])
 
 class _StreamingHTTPMixin:
     """Mixin class for HTTP and HTTPS connections that implements a streaming
@@ -126,31 +127,31 @@ class StreamingHTTPHandler(urllib.request.HTTPHandler):
                             "No Content-Length specified for iterable body")
         return urllib.request.HTTPHandler.do_request_(self, req)
 
-if hasattr(http.client, 'HTTPS'):
-    class StreamingHTTPSConnection(_StreamingHTTPMixin,
-            http.client.HTTPSConnection):
-        """Subclass of `httplib.HTTSConnection` that overrides the `send()`
-        method to support iterable body objects"""
+#if hasattr(http.client, 'HTTPS'):
+class StreamingHTTPSConnection(_StreamingHTTPMixin,
+    http.client.HTTPSConnection):
+    """Subclass of `httplib.HTTSConnection` that overrides the `send()`
+    method to support iterable body objects"""
 
-    class StreamingHTTPSHandler(urllib.request.HTTPSHandler):
-        """Subclass of `urllib2.HTTPSHandler` that uses
-        StreamingHTTPSConnection as its http connection class."""
+class StreamingHTTPSHandler(urllib.request.HTTPSHandler):
+    """Subclass of `urllib2.HTTPSHandler` that uses
+    StreamingHTTPSConnection as its http connection class."""
 
-        handler_order = urllib.request.HTTPSHandler.handler_order - 1
+    handler_order = urllib.request.HTTPSHandler.handler_order - 1
 
-        def https_open(self, req):
-            return self.do_open(StreamingHTTPSConnection, req)
+    def https_open(self, req):
+        return self.do_open(StreamingHTTPSConnection, req)
 
-        def https_request(self, req):
-            # Make sure that if we're using an iterable object as the request
-            # body, that we've also specified Content-Length
-            if req.has_data():
-                data = req.get_data()
-                if hasattr(data, 'read') or hasattr(data, 'next'):
-                    if not req.has_header('Content-length'):
-                        raise ValueError(
-                                "No Content-Length specified for iterable body")
-            return urllib.request.HTTPSHandler.do_request_(self, req)
+    def https_request(self, req):
+        # Make sure that if we're using an iterable object as the request
+        # body, that we've also specified Content-Length
+        if req.has_data():
+            data = req.get_data()
+            if hasattr(data, 'read') or hasattr(data, 'next'):
+                if not req.has_header('Content-length'):
+                    raise ValueError(
+                            "No Content-Length specified for iterable body")
+        return urllib.request.HTTPSHandler.do_request_(self, req)
 
 
 def get_handlers():
